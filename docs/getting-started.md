@@ -55,8 +55,8 @@ cp .env.example .env
 nano .env
 ```
 
-Get API keys from:
-- **Spotify**: https://developer.spotify.com/dashboard
+Get API keys/tokens from:
+- **Discogs**: https://www.discogs.com/settings/developers (Personal Access Token)
 - **Last.fm**: https://www.last.fm/api/account/create
 - **AcoustID**: https://acoustid.org/api-key
 
@@ -102,14 +102,21 @@ music-keepers clean duplicates --remove --auto
 ### Discover New Music
 
 ```bash
-# Get personalized recommendations
-music-keepers discover recommendations
+# Search Discogs by genre (uses your top genre if not specified)
+music-keepers discover recommendations --genre "Electronic"
 
-# Get recommendations by genre
-music-keepers discover recommendations --genre "Jazz" --limit 30
+# Search Discogs for releases
+music-keepers discover search --artist "Aphex Twin" --limit 10
+music-keepers discover search --genre "Techno" --limit 20
 
-# Find similar artists
-music-keepers discover similar "Miles Davis"
+# Get detailed artist information
+music-keepers discover artist-info "Daft Punk"
+
+# Find related artists (members, aliases, groups)
+music-keepers discover similar "Four Tet"
+
+# Enrich your library metadata with Discogs data
+music-keepers discover enrich --max-tracks 100
 
 # View library statistics
 music-keepers discover stats

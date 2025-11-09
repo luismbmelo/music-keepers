@@ -14,9 +14,11 @@ alembic>=1.12.0           # Database migrations
 
 # API integrations
 requests>=2.31.0          # HTTP library
-spotipy>=2.23.0           # Spotify API wrapper
+python3-discogs-client>=2.7  # Discogs API wrapper
 pylast>=5.2.0             # Last.fm API wrapper
 musicbrainzngs>=0.7.1     # MusicBrainz API wrapper
+beautifulsoup4>=4.12.0    # Web scraping for Bandcamp/Beatport
+lxml>=4.9.0               # HTML parser
 
 # Utilities
 python-dotenv>=1.0.0      # Environment variable management

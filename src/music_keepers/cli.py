@@ -130,66 +130,76 @@ def discover():
 
 
 @discover.command()
-@click.option('--limit', default=20, help='Number of recommendations')
-@click.option('--genre', help='Filter by genre')
-@click.option('--min-rating', type=int, help='Minimum track rating')
-def recommendations(limit: int, genre: Optional[str], min_rating: Optional[int]):
-    """Get music recommendations based on your library."""
+@click.option('--limit', default=20, help='Number of results')
+@click.option('--genre', help='Search by genre')
+def recommendations(limit: int, genre: Optional[str]):
+    """Search for releases by genre on Discogs."""
     config = Config()
     db_manager = DatabaseManager(config.database_path)
     discovery = MusicDiscovery(config, db_manager)
 
-    console.print("[cyan]Getting recommendations...[/cyan]\n")
-    recs = discovery.get_recommendations(limit=limit, genre=genre, min_rating=min_rating)
+    if not genre:
+        # If no genre specified, use most common genre from library
+        genres = discovery.analyze_library_genres()
+        if genres:
+            genre = list(genres.keys())[0]
+            console.print(f"[cyan]Using your top genre: {genre}[/cyan]\n")
+        else:
+            console.print("[red]Please specify a genre with --genre[/red]")
+            return
+
+    console.print(f"[cyan]Searching Discogs for {genre} releases...[/cyan]\n")
+    recs = discovery.get_recommendations_by_genre(genre=genre, limit=limit)
 
     if recs:
-        table = Table(title="Recommended Tracks")
-        table.add_column("Artist", style="cyan")
-        table.add_column("Title", style="green")
-        table.add_column("Album", style="yellow")
-        table.add_column("Popularity", style="magenta")
+        table = Table(title=f"{genre} Releases from Discogs")
+        table.add_column("Title", style="cyan")
+        table.add_column("Year", style="green")
+        table.add_column("Format", style="yellow")
+        table.add_column("Label", style="magenta")
 
         for rec in recs:
             table.add_row(
-                rec['artist'],
-                rec['title'],
-                rec['album'],
-                str(rec.get('popularity', 'N/A'))
+                rec.get('title', 'N/A'),
+                str(rec.get('year', 'N/A')),
+                rec.get('format', 'N/A'),
+                rec.get('label', 'N/A')[:30] if rec.get('label') else 'N/A'
             )
 
         console.print(table)
+        console.print(f"\n[dim]Tip: Visit discogs.com to purchase these releases[/dim]")
     else:
-        console.print("[yellow]No recommendations available[/yellow]")
+        console.print("[yellow]No releases found[/yellow]")
 
 
 @discover.command()
 @click.argument('artist_name')
-@click.option('--limit', default=10, help='Number of similar artists')
+@click.option('--limit', default=10, help='Number of related artists')
 def similar(artist_name: str, limit: int):
-    """Find artists similar to a given artist."""
+    """Find related artists (members, aliases, groups) on Discogs."""
     config = Config()
     db_manager = DatabaseManager(config.database_path)
     discovery = MusicDiscovery(config, db_manager)
 
-    console.print(f"[cyan]Finding artists similar to {artist_name}...[/cyan]\n")
+    console.print(f"[cyan]Finding related artists for {artist_name}...[/cyan]\n")
     similar_artists = discovery.find_similar_artists(artist_name, limit=limit)
 
     if similar_artists:
-        table = Table(title=f"Artists Similar to {artist_name}")
-        table.add_column("Artist", style="cyan")
-        table.add_column("Genres", style="yellow")
-        table.add_column("Popularity", style="magenta")
+        table = Table(title=f"Artists Related to {artist_name}")
+        table.add_column("Name", style="cyan")
+        table.add_column("Relationship", style="yellow")
+        table.add_column("URL", style="blue")
 
         for artist in similar_artists:
             table.add_row(
-                artist['name'],
-                ', '.join(artist.get('genres', [])[:3]),
-                str(artist.get('popularity', 'N/A'))
+                artist.get('name', 'N/A'),
+                artist.get('relationship', 'N/A'),
+                artist.get('url', 'N/A')[:50] if artist.get('url') else 'N/A'
             )
 
         console.print(table)
     else:
-        console.print("[yellow]No similar artists found[/yellow]")
+        console.print("[yellow]No related artists found[/yellow]")
 
 
 @discover.command()
@@ -219,6 +229,102 @@ def stats():
             table.add_row(artist['artist'], str(artist['track_count']))
 
         console.print(table)
+
+    # Top genres
+    if stats.get('top_genres'):
+        console.print("\n[cyan]Top Genres:[/cyan]")
+        table = Table()
+        table.add_column("Genre", style="yellow")
+        table.add_column("Tracks", style="magenta")
+
+        for genre in stats['top_genres']:
+            table.add_row(genre['genre'], str(genre['track_count']))
+
+        console.print(table)
+
+
+@discover.command('search')
+@click.option('--artist', help='Artist name')
+@click.option('--album', help='Album/release title')
+@click.option('--genre', help='Genre')
+@click.option('--limit', default=10, help='Number of results')
+def search_discogs(artist: Optional[str], album: Optional[str], genre: Optional[str], limit: int):
+    """Search Discogs for releases."""
+    config = Config()
+    db_manager = DatabaseManager(config.database_path)
+    discovery = MusicDiscovery(config, db_manager)
+
+    console.print("[cyan]Searching Discogs...[/cyan]\n")
+    results = discovery.search_discogs(
+        artist=artist,
+        release_title=album,
+        genre=genre,
+        limit=limit
+    )
+
+    if results:
+        table = Table(title="Discogs Search Results")
+        table.add_column("Title", style="cyan", max_width=40)
+        table.add_column("Year", style="green")
+        table.add_column("Format", style="yellow")
+        table.add_column("Genres", style="magenta")
+
+        for result in results:
+            genres_str = ', '.join(result.get('genres', [])[:2])
+            table.add_row(
+                result.get('title', 'N/A'),
+                str(result.get('year', 'N/A')),
+                result.get('format', 'N/A')[:20] if result.get('format') else 'N/A',
+                genres_str or 'N/A'
+            )
+
+        console.print(table)
+    else:
+        console.print("[yellow]No results found[/yellow]")
+
+
+@discover.command('artist-info')
+@click.argument('artist_name')
+def artist_info(artist_name: str):
+    """Get detailed artist information from Discogs."""
+    config = Config()
+    db_manager = DatabaseManager(config.database_path)
+    discovery = MusicDiscovery(config, db_manager)
+
+    console.print(f"[cyan]Looking up {artist_name} on Discogs...[/cyan]\n")
+    info = discovery.get_artist_info(artist_name)
+
+    if info:
+        console.print(f"[green]Name:[/green] {info.get('name', 'N/A')}")
+        if info.get('real_name'):
+            console.print(f"[green]Real Name:[/green] {info['real_name']}")
+
+        if info.get('aliases'):
+            console.print(f"[green]Aliases:[/green] {', '.join(info['aliases'])}")
+
+        if info.get('members'):
+            console.print(f"[green]Members:[/green] {', '.join(info['members'])}")
+
+        if info.get('profile'):
+            console.print(f"\n[cyan]Profile:[/cyan]")
+            console.print(info['profile'][:500] + '...' if len(info['profile']) > 500 else info['profile'])
+
+        if info.get('url'):
+            console.print(f"\n[blue]Discogs URL:[/blue] {info['url']}")
+    else:
+        console.print("[yellow]Artist not found[/yellow]")
+
+
+@discover.command('enrich')
+@click.option('--max-tracks', default=100, help='Maximum number of tracks to enrich')
+def enrich_metadata(max_tracks: int):
+    """Enrich library metadata using Discogs."""
+    config = Config()
+    db_manager = DatabaseManager(config.database_path)
+    discovery = MusicDiscovery(config, db_manager)
+
+    count = discovery.enrich_library_metadata(max_tracks=max_tracks)
+    console.print(f"\n[green]✓[/green] Enriched {count} tracks with Discogs metadata")
 
 
 @main.group()

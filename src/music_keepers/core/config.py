@@ -45,9 +45,17 @@ class Config:
                 'path': str(self.DEFAULT_DATA_PATH / "library.db")
             },
             'integrations': {
-                'spotify': {
-                    'client_id': os.getenv('SPOTIFY_CLIENT_ID', ''),
-                    'client_secret': os.getenv('SPOTIFY_CLIENT_SECRET', '')
+                'discogs': {
+                    'token': os.getenv('DISCOGS_TOKEN', ''),
+                    'user_agent': 'MusicKeepers/0.1.0 +https://github.com/luismbmelo/music-keepers'
+                },
+                'bandcamp': {
+                    'enabled': True,
+                    'user_agent': 'MusicKeepers/0.1.0'
+                },
+                'beatport': {
+                    'enabled': True,
+                    'user_agent': 'MusicKeepers/0.1.0'
                 },
                 'lastfm': {
                     'api_key': os.getenv('LASTFM_API_KEY', ''),
@@ -56,6 +64,9 @@ class Config:
                 'musicbrainz': {
                     'enabled': True,
                     'user_agent': 'MusicKeepers/0.1.0'
+                },
+                'acoustid': {
+                    'api_key': os.getenv('ACOUSTID_API_KEY', '')
                 }
             },
             'cleaning': {

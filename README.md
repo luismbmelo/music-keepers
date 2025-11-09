@@ -16,9 +16,9 @@ Music Keepers is a comprehensive music library management tool that helps you ma
 
 ### 🔍 Discovery
 - **Music recommendations** - Discover new music based on your library
-- **Similar artist finder** - Find artists similar to ones you already enjoy
+- **Artist and release lookup** - Find detailed information about artists and releases
 - **Genre exploration** - Explore music by genre and mood
-- **API integrations** - Connect with Spotify, Last.fm, MusicBrainz, and more
+- **API integrations** - Connect with Discogs, Bandcamp, Beatport, Last.fm, and MusicBrainz
 
 ### 🧹 Cleaning
 - **Duplicate detection** - Find and remove duplicate tracks (by audio fingerprint or metadata)
@@ -97,9 +97,13 @@ database:
   path: ~/.local/share/music-keepers/library.db
 
 integrations:
-  spotify:
-    client_id: YOUR_CLIENT_ID
-    client_secret: YOUR_CLIENT_SECRET
+  discogs:
+    token: YOUR_DISCOGS_TOKEN
+    user_agent: MusicKeepers/0.1.0
+  bandcamp:
+    enabled: true  # Uses web scraping
+  beatport:
+    enabled: true  # Uses web scraping
   lastfm:
     api_key: YOUR_API_KEY
   musicbrainz:
@@ -157,7 +161,8 @@ music-keepers/
 - [ ] Basic metadata extraction and organization
 - [ ] Duplicate detection using audio fingerprinting
 - [ ] Integration with MusicBrainz for metadata enrichment
-- [ ] Spotify and Last.fm API integration
+- [ ] Discogs, Bandcamp, and Beatport integration
+- [ ] Last.fm API integration
 - [ ] Web UI for library management
 - [ ] Machine learning-based recommendations
 - [ ] Automatic playlist generation
